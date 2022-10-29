@@ -56,6 +56,7 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
         group2 = obj.vertex_groups[group2_name]
 
         # Swap weights.
+        num_vertices_changed = 0
         for vertex in obj.data.vertices:
             weights = {}
 
@@ -75,6 +76,9 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
             for (group, weight) in weights.items():
                 group.add([vertex.index], weight, "ADD")
 
+            if len(weights) > 0:
+                num_vertices_changed += 1
+
         # Remove group2 because there was nothing moved into it from the empty group1.
         if is_group1_new:
             obj.vertex_groups.remove(group2)
@@ -84,6 +88,8 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
             obj.vertex_groups.remove(group1)
 
         bpy.ops.object.mode_set(mode=original_mode)
+
+        self.report({"INFO"}, "Swapped vertex groups for %d vertices" % num_vertices_changed)
 
         return {"FINISHED"}
 
