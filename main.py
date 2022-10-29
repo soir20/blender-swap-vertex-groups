@@ -17,6 +17,7 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
         group1 = context.object.selected_vertex_group1
         group2 = context.object.selected_vertex_group2
         if group1 == group2:
+            self.report({"INFO"}, "Cannot swap group with itself")
             self.report({"DEBUG"}, "Cancelling swap because group 1 and group 2 are both %d" % group1)
             return {"CANCELLED"}
 
