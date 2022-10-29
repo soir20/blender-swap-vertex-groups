@@ -138,6 +138,7 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
 
         row = self.layout.row()
         row.operator("swap_vert_group.swap")
+        row.enabled = pose is not None and len(pose.bones) > 0
 
     def draw_list(self, obj, pose, group_name, list_id, active_index_property):
         layout = self.layout
