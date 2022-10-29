@@ -128,6 +128,7 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "data"
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         obj = context.object
