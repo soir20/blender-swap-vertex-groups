@@ -153,18 +153,20 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
 
 
 def register():
+    bpy.types.Object.selected_vertex_group1 = bpy.props.IntProperty(name="First selected vertex group")
+    bpy.types.Object.selected_vertex_group2 = bpy.props.IntProperty(name="Second selected vertex group")
     bpy.utils.register_class(SwapVertexGroupsOperator)
     bpy.utils.register_class(VERTEX_GROUPS_UL_selector)
     bpy.utils.register_class(SwapVertexGroupsPanel)
 
 
 def unregister():
+    del bpy.types.Object.selected_vertex_group1
+    del bpy.types.Object.selected_vertex_group2
     bpy.utils.unregister_class(SwapVertexGroupsOperator)
     bpy.utils.unregister_class(VERTEX_GROUPS_UL_selector)
     bpy.utils.unregister_class(SwapVertexGroupsPanel)
 
 
 if __name__ == "__main__":
-    bpy.types.Object.selected_vertex_group1 = bpy.props.IntProperty()
-    bpy.types.Object.selected_vertex_group2 = bpy.props.IntProperty()
     register()
