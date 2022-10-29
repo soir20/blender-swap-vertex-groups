@@ -2,8 +2,13 @@ import bpy
 
 bl_info = {
     "name": "Swap Vertex Groups",
+    "version": (1, 0),
     "blender": (2, 80, 0),
     "category": "Rigging",
+    "location": "Properties > Object Data > Swap Vertex Groups",
+    "doc_url": "https://github.com/soir20/blender-swap-vertex-groups/",
+    "tracker_url": "https://github.com/soir20/blender-swap-vertex-groups/issues/",
+    "support": "COMMUNITY",
 }
 
 
