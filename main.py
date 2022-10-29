@@ -7,6 +7,17 @@ bl_info = {
 }
 
 
+def get_object_pose(obj):
+    pose = obj.pose
+    parent = obj.parent
+
+    while pose is None and parent is not None:
+        pose = parent.pose
+        parent = parent.parent
+
+    return pose
+
+
 class SwapVertexGroupsOperator(bpy.types.Operator):
     """Swaps the active object's vertices between the selected vertex groups."""
     bl_idname = "swap_vert_group.swap"
@@ -14,24 +25,43 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
 
     def execute(self, context):
         obj = context.object
+        original_mode = obj.mode
+        pose = get_object_pose(obj)
+        bones = [] if pose is None else pose.bones
 
-        group1 = context.object.selected_vertex_group1
-        group2 = context.object.selected_vertex_group2
-        if group1 == group2:
-            self.report({"INFO"}, "Cannot swap group with itself")
-            self.report({"DEBUG"}, "Cancelling swap because group 1 and group 2 are both %d" % group1)
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+        group1_name = obj.vertex_groups[obj.selected_vertex_group1].name
+        group2_name = bones[obj.selected_vertex_group2].name
+
+        if group1_name == group2_name:
+            self.report({"INFO"}, "Cannot swap group %s with itself" % group1_name)
             return {"CANCELLED"}
+
+        is_group2_new = group2_name not in obj.vertex_groups
+        if is_group2_new:
+            obj.vertex_groups.new(name=group2_name)
+
+        group1 = obj.vertex_groups[group1_name]
+        group2 = obj.vertex_groups[group2_name]
 
         for vertex in obj.data.vertices:
             for group_elm in vertex.groups:
                 weight = group_elm.weight
 
-                if group_elm.group == group1:
-                    obj.vertex_groups[group1].add([vertex.index], weight, "SUBTRACT")
-                    obj.vertex_groups[group2].add([vertex.index], weight, "ADD")
-                elif group_elm.group == group2:
-                    obj.vertex_groups[group1].add([vertex.index], weight, "ADD")
-                    obj.vertex_groups[group2].add([vertex.index], weight, "SUBTRACT")
+                group_name = obj.vertex_groups[group_elm.group].name
+                if group_name == group1_name:
+                    group1.remove([vertex.index])
+                    group2.add([vertex.index], weight, "ADD")
+                elif group_name == group2_name:
+                    group1.add([vertex.index], weight, "ADD")
+                    group2.remove([vertex.index])
+
+        # Remove group1 because there was nothing moved into it from the empty group2.
+        if is_group2_new:
+            obj.vertex_groups.remove(group1)
+
+        bpy.ops.object.mode_set(mode=original_mode)
 
         return {"FINISHED"}
 
@@ -63,25 +93,23 @@ class VERTEX_GROUPS_UL_selector(bpy.types.UIList):
             layout.label(text="", icon_value=icon)
 
 
-# And now we can use this list everywhere in Blender. Here is a small example panel.
 class SwapVertexGroupsPanel(bpy.types.Panel):
-    """Panel to select vertex groups that will be swapped."""
+    """Panel to select vertex groups that will b"""
     bl_label = "Swap Vertex Groups"
     bl_idname = "DATA_PT_swap_vertex_groups"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "data"
 
-    selected_index1 = 0
-    selected_index2 = 0
-
     def draw(self, context):
         layout = self.layout
 
         obj = context.object
+        pose = get_object_pose(obj)
+
         layout.template_list("VERTEX_GROUPS_UL_selector", "first", obj, "vertex_groups", obj,
                              "selected_vertex_group1")
-        layout.template_list("VERTEX_GROUPS_UL_selector", "second", obj, "vertex_groups", obj,
+        layout.template_list("VERTEX_GROUPS_UL_selector", "second", pose, "bones", obj,
                              "selected_vertex_group2")
 
         row = layout.row()
