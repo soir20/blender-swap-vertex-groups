@@ -8,6 +8,7 @@ bl_info = {
 
 
 class SwapVertexGroupsOperator(bpy.types.Operator):
+    """Swaps the active object's vertices between the selected vertex groups."""
     bl_idname = "swap_vert_group.swap"
     bl_label = "Swap Vertex Groups"
 
@@ -64,7 +65,7 @@ class VERTEX_GROUPS_UL_selector(bpy.types.UIList):
 
 # And now we can use this list everywhere in Blender. Here is a small example panel.
 class SwapVertexGroupsPanel(bpy.types.Panel):
-    """Creates a Panel in the Object properties window"""
+    """Panel to select vertex groups that will be swapped."""
     bl_label = "Swap Vertex Groups"
     bl_idname = "DATA_PT_swap_vertex_groups"
     bl_space_type = "PROPERTIES"
