@@ -31,12 +31,17 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
 
         bpy.ops.object.mode_set(mode="OBJECT")
 
-        group1_name = obj.vertex_groups[obj.selected_vertex_group1].name
+        group1_name = bones[obj.selected_vertex_group1].name
         group2_name = bones[obj.selected_vertex_group2].name
 
         if group1_name == group2_name:
             self.report({"INFO"}, "Cannot swap group %s with itself" % group1_name)
             return {"CANCELLED"}
+
+        # Create group 1 and group 2 if needed.
+        is_group1_new = group1_name not in obj.vertex_groups
+        if is_group1_new:
+            obj.vertex_groups.new(name=group1_name)
 
         is_group2_new = group2_name not in obj.vertex_groups
         if is_group2_new:
@@ -45,17 +50,29 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
         group1 = obj.vertex_groups[group1_name]
         group2 = obj.vertex_groups[group2_name]
 
+        # Swap weights.
         for vertex in obj.data.vertices:
+            weights = {}
+
+            # Get the weights to assign for group1 and group2.
             for group_elm in vertex.groups:
                 weight = group_elm.weight
 
                 group_name = obj.vertex_groups[group_elm.group].name
                 if group_name == group1_name:
                     group1.remove([vertex.index])
-                    group2.add([vertex.index], weight, "ADD")
+                    weights[group2] = weight
                 elif group_name == group2_name:
-                    group1.add([vertex.index], weight, "ADD")
                     group2.remove([vertex.index])
+                    weights[group1] = weight
+
+            # Assign the new weights.
+            for (group, weight) in weights.items():
+                group.add([vertex.index], weight, "ADD")
+
+        # Remove group2 because there was nothing moved into it from the empty group1.
+        if is_group1_new:
+            obj.vertex_groups.remove(group2)
 
         # Remove group1 because there was nothing moved into it from the empty group2.
         if is_group2_new:
@@ -102,18 +119,26 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
     bl_context = "data"
 
     def draw(self, context):
-        layout = self.layout
-
         obj = context.object
         pose = get_object_pose(obj)
 
-        layout.template_list("VERTEX_GROUPS_UL_selector", "first", obj, "vertex_groups", obj,
-                             "selected_vertex_group1")
-        layout.template_list("VERTEX_GROUPS_UL_selector", "second", pose, "bones", obj,
-                             "selected_vertex_group2")
+        self.draw_list(obj, pose, "Group 1", "first", "selected_vertex_group1")
+        self.draw_list(obj, pose, "Group 2", "second", "selected_vertex_group2")
 
-        row = layout.row()
+        row = self.layout.row()
         row.operator("swap_vert_group.swap")
+
+    def draw_list(self, obj, pose, group_name, list_id, active_index_property):
+        layout = self.layout
+
+        split_factor = 0.3
+        split = layout.split(factor=split_factor)
+        col = split.column()
+        col.alignment = "RIGHT"
+        col.label(text=group_name)
+        col = split.column()
+        col.template_list("VERTEX_GROUPS_UL_selector", list_id, pose, "bones", obj,
+                          active_index_property)
 
 
 def register():
