@@ -24,7 +24,7 @@ def get_object_pose(obj):
 
 
 class SwapVertexGroupsOperator(bpy.types.Operator):
-    """Swaps the active object's vertices between the selected vertex groups."""
+    """Swaps the active object's vertices between the selected vertex groups"""
     bl_idname = "swap_vert_group.swap"
     bl_label = "Swap Vertex Groups"
 
@@ -122,7 +122,7 @@ class VERTEX_GROUPS_UL_selector(bpy.types.UIList):
 
 
 class SwapVertexGroupsPanel(bpy.types.Panel):
-    """Panel to select vertex groups that will b"""
+    """Panel to select vertex groups that will be swapped"""
     bl_label = "Swap Vertex Groups"
     bl_idname = "DATA_PT_swap_vertex_groups"
     bl_space_type = "PROPERTIES"
