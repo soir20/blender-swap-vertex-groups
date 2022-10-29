@@ -12,13 +12,25 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
     bl_label = "Swap Vertex Groups"
 
     def execute(self, context):
+        obj = context.object
+
         group1 = context.object.selected_vertex_group1
         group2 = context.object.selected_vertex_group2
         if group1 == group2:
-            self.report({'DEBUG'}, "Cancalling swap because group 1 and group 2 are both %d" % group1)
+            self.report({'DEBUG'}, "Cancelling swap because group 1 and group 2 are both %d" % group1)
             return {'CANCELLED'}
 
-        print("Hello World")
+        for vertex in obj.data.vertices:
+            for group_elm in vertex.groups:
+                weight = group_elm.weight
+
+                if group_elm.group == group1:
+                    obj.vertex_groups[group1].add([vertex.index], weight, 'SUBTRACT')
+                    obj.vertex_groups[group2].add([vertex.index], weight, 'ADD')
+                elif group_elm.group == group2:
+                    obj.vertex_groups[group1].add([vertex.index], weight, 'ADD')
+                    obj.vertex_groups[group2].add([vertex.index], weight, 'SUBTRACT')
+
         return {'FINISHED'}
 
 
