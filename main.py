@@ -17,21 +17,21 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
         group1 = context.object.selected_vertex_group1
         group2 = context.object.selected_vertex_group2
         if group1 == group2:
-            self.report({'DEBUG'}, "Cancelling swap because group 1 and group 2 are both %d" % group1)
-            return {'CANCELLED'}
+            self.report({"DEBUG"}, "Cancelling swap because group 1 and group 2 are both %d" % group1)
+            return {"CANCELLED"}
 
         for vertex in obj.data.vertices:
             for group_elm in vertex.groups:
                 weight = group_elm.weight
 
                 if group_elm.group == group1:
-                    obj.vertex_groups[group1].add([vertex.index], weight, 'SUBTRACT')
-                    obj.vertex_groups[group2].add([vertex.index], weight, 'ADD')
+                    obj.vertex_groups[group1].add([vertex.index], weight, "SUBTRACT")
+                    obj.vertex_groups[group2].add([vertex.index], weight, "ADD")
                 elif group_elm.group == group2:
-                    obj.vertex_groups[group1].add([vertex.index], weight, 'ADD')
-                    obj.vertex_groups[group2].add([vertex.index], weight, 'SUBTRACT')
+                    obj.vertex_groups[group1].add([vertex.index], weight, "ADD")
+                    obj.vertex_groups[group2].add([vertex.index], weight, "SUBTRACT")
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class VERTEX_GROUPS_UL_selector(bpy.types.UIList):
@@ -42,22 +42,22 @@ class VERTEX_GROUPS_UL_selector(bpy.types.UIList):
     #   have custom icons ID, which are not available as enum items).
     #   active_data is the RNA object containing the active property for the collection (i.e. integer pointing to the
     #   active item of the collection).
-    #   active_propname is the name of the active property (use 'getattr(active_data, active_propname)').
+    #   active_propname is the name of the active property (use "getattr(active_data, active_propname)").
     #   index is index of the current item in the collection.
     #   flt_flag is the result of the filtering process for this item.
-    #   Note: as index and flt_flag are optional arguments, you do not have to use/declare them here if you don't
+    #   Note: as index and flt_flag are optional arguments, you do not have to use/declare them here if you don"t
     #         need them.
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        # draw_item must handle the three layout types... Usually 'DEFAULT' and 'COMPACT' can share the same code.
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+        # draw_item must handle the three layout types... Usually "DEFAULT" and "COMPACT" can share the same code.
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
             # You should always start your row layout by a label (icon + text), or a non-embossed text field,
             # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
             # We use icon_value of label, as our given icon is an integer value, not an enum ID.
             # Note "data" names should never be translated!
             layout.prop(item, "name", text="", emboss=False, icon_value=icon)
-        # 'GRID' layout type should be as compact as possible (typically a single icon!).
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
+        # "GRID" layout type should be as compact as possible (typically a single icon!).
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
 
@@ -66,8 +66,8 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
     """Creates a Panel in the Object properties window"""
     bl_label = "Swap Vertex Groups"
     bl_idname = "DATA_PT_swap_vertex_groups"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
 
     selected_index1 = 0
