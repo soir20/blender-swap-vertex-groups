@@ -1,6 +1,5 @@
 import bpy
 
-
 bl_info = {
     "name": "Swap Vertex Groups",
     "blender": (2, 80, 0),
@@ -13,6 +12,12 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
     bl_label = "Swap Vertex Groups"
 
     def execute(self, context):
+        group1 = context.object.selected_vertex_group1
+        group2 = context.object.selected_vertex_group2
+        if group1 == group2:
+            self.report({'DEBUG'}, "Cancalling swap because group 1 and group 2 are both %d" % group1)
+            return {'CANCELLED'}
+
         print("Hello World")
         return {'FINISHED'}
 
