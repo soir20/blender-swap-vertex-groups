@@ -60,9 +60,9 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
         layout = self.layout
 
         obj = context.object
-        layout.template_list("DATA_PT_swap_vertex_groups_list", "first", obj, "vertex_groups", obj,
+        layout.template_list("VERTEX_GROUPS_UL_selector", "first", obj, "vertex_groups", obj,
                              "selected_vertex_group1")
-        layout.template_list("DATA_PT_swap_vertex_groups_list", "second", obj, "vertex_groups", obj,
+        layout.template_list("VERTEX_GROUPS_UL_selector", "second", obj, "vertex_groups", obj,
                              "selected_vertex_group2")
 
         row = layout.row()
