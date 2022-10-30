@@ -2,6 +2,7 @@ import bpy
 
 bl_info = {
     "name": "Swap Vertex Groups",
+    "description": "Swaps vertices between user-selected vertex groups.",
     "version": (1, 0),
     "blender": (2, 80, 0),
     "category": "Rigging",
