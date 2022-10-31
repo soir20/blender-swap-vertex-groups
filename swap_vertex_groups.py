@@ -3,7 +3,7 @@ import bpy
 bl_info = {
     "name": "Swap Vertex Groups",
     "description": "Swaps vertices between user-selected vertex groups.",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (2, 80, 0),
     "category": "Rigging",
     "location": "Properties > Object Data > Swap Vertex Groups",
@@ -14,6 +14,9 @@ bl_info = {
 
 
 def get_object_pose(obj):
+    if obj is None:
+        return None
+
     pose = obj.pose
     parent = obj.parent
 
@@ -28,6 +31,12 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
     """Swaps the active object's vertices between the selected vertex groups"""
     bl_idname = "swap_vert_group.swap"
     bl_label = "Swap Vertex Groups"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(self, context):
+        pose = get_object_pose(context.object)
+        return pose is not None and len(pose.bones) > 0 and context.object.type == "MESH"
 
     def execute(self, context):
         obj = context.object
@@ -41,16 +50,14 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
         group2_name = bones[obj.selected_vertex_group2].name
 
         if group1_name == group2_name:
-            self.report({"INFO"}, "Cannot swap group %s with itself" % group1_name)
+            self.report({"INFO"}, f"Cannot swap group {group1_name} with itself")
             return {"CANCELLED"}
 
         # Create group 1 and group 2 if needed.
-        is_group1_new = group1_name not in obj.vertex_groups
-        if is_group1_new:
+        if group1_name not in obj.vertex_groups:
             obj.vertex_groups.new(name=group1_name)
 
-        is_group2_new = group2_name not in obj.vertex_groups
-        if is_group2_new:
+        if group2_name not in obj.vertex_groups:
             obj.vertex_groups.new(name=group2_name)
 
         group1 = obj.vertex_groups[group1_name]
@@ -58,6 +65,7 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
 
         # Swap weights.
         num_vertices_changed = 0
+        num_vertices_by_group = {}
         for vertex in obj.data.vertices:
             weights = {}
 
@@ -66,31 +74,37 @@ class SwapVertexGroupsOperator(bpy.types.Operator):
                 weight = group_elm.weight
 
                 group_name = obj.vertex_groups[group_elm.group].name
-                if group_name == group1_name:
-                    group1.remove([vertex.index])
-                    weights[group2] = weight
-                elif group_name == group2_name:
-                    group2.remove([vertex.index])
-                    weights[group1] = weight
+                num_vertices_by_group[group_name] = num_vertices_by_group.get(group_name, 0) + 1
+
+                if not obj.swap_selected_only or vertex.select:
+                    if group_name == group1_name:
+                        group1.remove([vertex.index])
+                        num_vertices_by_group[group1_name] = num_vertices_by_group.get(group_name, 0) - 1
+                        weights[group2] = weight
+                    elif group_name == group2_name:
+                        group2.remove([vertex.index])
+                        num_vertices_by_group[group2_name] = num_vertices_by_group.get(group_name, 0) - 1
+                        weights[group1] = weight
 
             # Assign the new weights.
             for (group, weight) in weights.items():
                 group.add([vertex.index], weight, "ADD")
+                num_vertices_by_group[group.name] = num_vertices_by_group.get(group.name, 0) + 1
 
             if len(weights) > 0:
                 num_vertices_changed += 1
 
-        # Remove group2 because there was nothing moved into it from the empty group1.
-        if is_group1_new:
-            obj.vertex_groups.remove(group2)
-
-        # Remove group1 because there was nothing moved into it from the empty group2.
-        if is_group2_new:
+        # Remove empty group1.
+        if num_vertices_by_group.get(group1_name, 0) == 0:
             obj.vertex_groups.remove(group1)
+
+        # Remove empty group2.
+        if num_vertices_by_group.get(group2_name, 0) == 0:
+            obj.vertex_groups.remove(group2)
 
         bpy.ops.object.mode_set(mode=original_mode)
 
-        self.report({"INFO"}, "Swapped vertex groups for %d vertices" % num_vertices_changed)
+        self.report({"INFO"}, f"Swapped vertex groups for {num_vertices_changed} vertices")
 
         return {"FINISHED"}
 
@@ -139,8 +153,9 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
         self.draw_list(obj, pose, "Group 2", "second", "selected_vertex_group2")
 
         row = self.layout.row()
-        row.operator("swap_vert_group.swap")
-        row.enabled = pose is not None and len(pose.bones) > 0 and obj.type == "MESH"
+        row.prop(obj, "swap_selected_only")
+        row = self.layout.row()
+        row.operator(SwapVertexGroupsOperator.bl_idname)
 
     def draw_list(self, obj, pose, group_name, list_id, active_index_property):
         layout = self.layout
@@ -158,6 +173,10 @@ class SwapVertexGroupsPanel(bpy.types.Panel):
 def register():
     bpy.types.Object.selected_vertex_group1 = bpy.props.IntProperty(name="First selected vertex group")
     bpy.types.Object.selected_vertex_group2 = bpy.props.IntProperty(name="Second selected vertex group")
+
+    # This is not an operator property because the redo panel does not display from the object data panel.
+    bpy.types.Object.swap_selected_only = bpy.props.BoolProperty(name="Swap selected vertices only")
+
     bpy.utils.register_class(SwapVertexGroupsOperator)
     bpy.utils.register_class(VERTEX_GROUPS_UL_selector)
     bpy.utils.register_class(SwapVertexGroupsPanel)
@@ -166,6 +185,7 @@ def register():
 def unregister():
     del bpy.types.Object.selected_vertex_group1
     del bpy.types.Object.selected_vertex_group2
+    del bpy.types.Object.swap_selected_only
     bpy.utils.unregister_class(SwapVertexGroupsOperator)
     bpy.utils.unregister_class(VERTEX_GROUPS_UL_selector)
     bpy.utils.unregister_class(SwapVertexGroupsPanel)
